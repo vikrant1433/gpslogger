@@ -14,30 +14,32 @@
         android:text="request location" />
 
     <TextView
-        android:id="@+id/latTV"
+        android:id="@+id/lat_tv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Lat: "
-        android:textSize="30sp" />
+        android:text="Lat: " />
 
     <TextView
-        android:id="@+id/longTV"
+        android:id="@+id/long_tv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Long: "
-        android:textSize="30sp" />
+        android:text="Long: " />
+
+    <TextView
+        android:id="@+id/last_updated_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Last updated Time: " />
 
     <TextView
         android:id="@+id/anlatTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="anLat: "
-        android:textSize="30sp" />
+        android:text="anLat: " />
 
     <TextView
         android:id="@+id/anlongTV"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="anLong: "
-        android:textSize="30sp" />
+        android:text="anLong: " />
 </LinearLayout>

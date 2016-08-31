@@ -1,30 +1,25 @@
 package com.safestreet.logger;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
@@ -32,8 +27,12 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 
+import java.text.DateFormat;
+import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+public class MainActivity extends AppCompatActivity implements GoogleApiClient
+        .ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     // 10 can be any number
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 10;
@@ -50,63 +49,42 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private TextView mLongitudeText;
     private TextView mAnLatitudeText;
     private TextView mAnLongitudeText;
-    private Button getLocBtn;
+    //    private Button getLocBtn;
+    private boolean mRequestingLocationUpdates = true;
     // android API location objects
     private LocationManager mLocationManager = null;
-    private LocationListener mLocationListener = null;
+    private com.google.android.gms.location.LocationListener mLocationListener = null;
     private LocationRequest mLocationRequest = null;
+    private Location mCurrentLocation = null;
+    private String mLastUpdateTime;
+    private TextView mLastUpdateTimeTextView;
 
     @Override
     protected void onStart() {
+        Log.d(TAG, "onStart(): Connecting to Google API client");
         mGoogleApiClient.connect();
         super.onStart();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Main Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app URL is correct.
-                Uri.parse("android-app://com.safestreet.logger/http/host/path")
-        );
-        AppIndex.AppIndexApi.start(mGoogleApiClient, viewAction);
     }
 
     @Override
     protected void onStop() {
+        Log.d(TAG, "onStop(): disconnecting to Google API client");
         mGoogleApiClient.disconnect();
         super.onStop();
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Main Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app URL is correct.
-                Uri.parse("android-app://com.safestreet.logger/http/host/path")
-        );
-        AppIndex.AppIndexApi.end(mGoogleApiClient, viewAction);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
+        super.onCreate(savedInstanceState); // Always call the superclass first
 
         setContentView(R.layout.activity_main);
 
         // create link between java objects and views
         setup();
 
-        // connnect to Google API Client
+        // connect to Google API Client
         if (mGoogleApiClient == null) {
-            // ATTENTION: This "addApi(AppIndex.API)"was auto-generated to implement the App Indexing API.
-            // See https://g.co/AppIndexing/AndroidStudio for more information.
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
@@ -148,10 +126,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //            }
 //        };
 
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+// != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest
+// .permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 //
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
+//                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+// Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
 //            }
 //            // TODO: Consider calling
 //            //    ActivityCompat#requestPermissions
@@ -167,69 +148,103 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //        locationManager.requestLocationUpdates("gps", 5000, 0, listener);
 
         // bind showLocation with getLocBtn
-        getLocBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLocation();
-            }
-        });
+//        getLocBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                showLocation();
+//            }
+//        });
 
         // create Location request for google play services api
+        // 1. Set Up a Location Request
 
         createLocationRequest();
 
-        // get current location settings.
-
+        // 2. get current location settings.
         getCurrentLocationSettings();
 
         // check if current location settings are satisfied or not
-
         checkLocationSettings();
-        // getting location from  android api
-        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        // define a listener that responds to location updates
-        mLocationListener = new LocationListener() {
 
-            @Override
-            public void onLocationChanged(Location location) {
-                mAnLongitudeText.setText("android API Longitude:" + String.valueOf(location.getLongitude()));
-                mAnLatitudeText.setText("android API Latitude" + String.valueOf(location.getLatitude()));
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+        /*
+         * GETTING LOCATION INFO USING ANDROID API
+         */
+        // getting location from  android API
+//        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+//        // define a listener that responds to location updates
+//        mLocationListener = new LocationListener() {
+//
+//            @Override
+//            public void onLocationChanged(Location location) {
+//                mAnLongitudeText.setText("android API Longitude:" + String.valueOf(location
+//                        .getLongitude()));
+//                mAnLatitudeText.setText("android API Latitude" + String.valueOf(location
+//                        .getLatitude()));
+//            }
+//
+//            @Override
+//            public void onStatusChanged(String provider, int status, Bundle extras) {
+//
+//            }
+//
+//            @Override
+//            public void onProviderEnabled(String provider) {
+//
+//            }
+//
+//            @Override
+//            public void onProviderDisabled(String provider) {
+//
+//            }
+//        };
+//
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+//                PackageManager.PERMISSION_GRANTED) {
+//            // TODO: Consider calling
+//            ActivityCompat.requestPermissions(
+//                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+//                            Manifest.permission.ACCESS_FINE_LOCATION},
+//                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
+//            //    ActivityCompat#requestPermissions
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,
+//                mLocationListener);
+        /*
+        * END
+        * */
     }
 
+    // create Location request for google play services api
+    // 1. Set Up a Location Request
+    protected void createLocationRequest() {
+        Log.d(TAG, "createLocationRequest(): creating location request for google play services " +
+                "location API");
+        // Set Up a Location Request
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    // 2. get current location settings.
+    private void getCurrentLocationSettings() {
+        // Get Current Location Settings
+        Log.d(TAG, "getCurrentLocationSettings(): Get Current Location Settings");
+        builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(mLocationRequest);
+    }
+
+    // check if current location settings are satisfied or not
     private void checkLocationSettings() {
+        // Next check whether the current location settings are satisfied:
+        Log.d(TAG, "checkLocationSettings(): check whether the current location settings are " +
+                "satisfied");
         PendingResult<LocationSettingsResult> result =
                 LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
                         builder.build());
@@ -239,88 +254,68 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onResult(LocationSettingsResult result) {
                 final Status status = result.getStatus();
-                final LocationSettingsStates locationSettingsStates = result.getLocationSettingsStates();
+                final LocationSettingsStates locationSettingsStates = result
+                        .getLocationSettingsStates();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
                         // All location settings are satisfied. The client can
                         // initialize location requests here.
                         //                 ...
+                        Log.d(TAG, "All location settings are satisfied. The client can " +
+                                "initialize location requests here.");
                         break;
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        Log.d(TAG, "Location settings are not satisfied");
                         // Location settings are not satisfied, but this can be fixed
                         // by showing the user a dialog.
                         try {
+                            // To prompt the user for permission to modify the location settings
                             // Show the dialog by calling startResolutionForResult(),
                             // and check the result in onActivityResult().
+                            Log.d(TAG, "To prompt the user for permission to modify the location " +
+                                    "settings");
                             status.startResolutionForResult(
                                     MainActivity.this,
                                     REQUEST_CHECK_SETTINGS);
                         } catch (IntentSender.SendIntentException e) {
                             // Ignore the error.
+                            Log.d(TAG, "Error occured while prompting user to modify the location" +
+                                    "settings");
                         }
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         // Location settings are not satisfied. However, we have no way
                         // to fix the settings so we won't show the dialog.
                         //                 ...
+                        Log.d(TAG, "Location settings are not satisfied");
                         break;
                 }
             }
         });
-//        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
-//            @Override
-//            public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
-//                final Status status = locationSettingsResult.getStatus();
-//                final LocationSettingsStates  locationSettingsStates =
-//                        locationSettingsResult.getLocationSettingsStates();
-//                switch (status.getStatusCode()) {
-//                    case LocationSettingsStatusCodes.SUCCESS:
-//                    // all location settings are statisfied. The client can
-//                    // initialize location requests here.
-//                        break;
-//                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-//                        // location settings are not statisfied, but this can be fixed
-//                        // by showing the user a dialog.
-//                        try {
-//                            // show the dialog by calling startResolutionForResult(),
-//                            // and check the result in onActivityResult().
-//                            status.startResolutionForResult(OuterClass.this,
-//                                    REQUEST_CHECK_SETTINGS);
-//                        } catch (IntentSender.SendIntentException e) {
-//                            // ignore the error
-//                        }
-//                        break;
-//                }
-//            }
-//        });
 
 
-    }
-
-    private void getCurrentLocationSettings() {
-        builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(mLocationRequest);
-    }
-
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(5000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     private void setup() {
-        mAnLatitudeText = (TextView) findViewById(R.id.anlatTV);
-        mAnLongitudeText = (TextView) findViewById(R.id.anlongTV);
-        mLatitudeText = (TextView) findViewById(R.id.latTV);
-        mLongitudeText = (TextView) findViewById(R.id.longTV);
-        getLocBtn = (Button) findViewById(R.id.getLocationBtn);
+//        mAnLatitudeText = (TextView) findViewById(R.id.anlatTV);
+//        mAnLongitudeText = (TextView) findViewById(R.id.anlongTV);
+        mLatitudeText = (TextView) findViewById(R.id.lat_tv);
+        mLongitudeText = (TextView) findViewById(R.id.long_tv);
+        mLastUpdateTimeTextView = (TextView) findViewById(R.id.last_updated_time);
+//        getLocBtn = (Button) findViewById(R.id.getLocationBtn);
     }
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void onConnected(@Nullable Bundle connectionHint) {
+        Log.d(TAG, "onConnected(): successfully connected to Google API client");
+        if (mRequestingLocationUpdates) {
+            startLocationUpdates();
+        }
 
-//        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission
+// .ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat
+// .checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) !=
+// PackageManager.PERMISSION_GRANTED) {
 //            // TODO: Consider calling
 //            //    ActivityCompat#requestPermissions
 //            ActivityCompat.requestPermissions(
@@ -338,28 +333,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 //        }
     }
 
-/*    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == MY_PERMISSIONS_REQUEST_ACCESS_LOCATION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // we can now safely use the API we requested access to
-//                showLocation();
-            }
-        } else {
-            // permission was denied or request was cancelled
-        }
-    }*/
+    private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
 
-    private void showLocation() {
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "permission not granted");
+            Log.d(TAG, "startLocationUpdates(): permission not granted asking for permission");
+            ActivityCompat.requestPermissions(
+                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
             //                                          int[] grantResults)
@@ -367,30 +350,73 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+        Log.d(TAG, "startLocationUpdates(): requesting location updates");
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                mLocationRequest, this);
+    }
 
-        Log.d(TAG, "inside showLocation() new ");
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mLastLocation != null) {
-            Log.d(TAG, "mLastLocation is not null");
-            mLatitudeText.setText("Google Play Services API Lat: " + String.valueOf(mLastLocation.getLatitude()));
-            mLongitudeText.setText("Google Play Services API Long: " + String.valueOf(mLastLocation.getLongitude()));
-        } else {
-            Log.d(TAG, "gps is not on");
+///*    @Override //    public void onRequestPermissionsResult(int requestCode, @NonNull String[]
+// permissions,
+//    @NonNull int[] grantResults) {
+//        if (requestCode == MY_PERMISSIONS_REQUEST_ACCESS_LOCATION) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                // we can now safely use the API we requested access to
+////                showLocation();
+//            }
+//        } else {
+//            // permission was denied or request was cancelled
+//        }
+//    }*/
+
+    private void showLocation() {
+
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+// != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest
+// .permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            Log.d(TAG, "permission not granted");
+//            // TODO: Consider calling
+//            //    ActivityCompat#requestPermissions
 //            ActivityCompat.requestPermissions(
 //                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
 //                            Manifest.permission.ACCESS_FINE_LOCATION},
 //                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
-        }
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//
+//        Log.d(TAG, "inside showLocation() new ");
+//        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+//        if (mLastLocation != null) {
+//            Log.d(TAG, "mLastLocation is not null");
+//            mLatitudeText.setText("Google Play Services API Lat: " + String.valueOf
+// (mLastLocation.getLatitude()));
+//            mLongitudeText.setText("Google Play Services API Long: " + String.valueOf
+// (mLastLocation.getLongitude()));
+//        } else {
+//            Log.d(TAG, "gps is not on");
+////            ActivityCompat.requestPermissions(
+////                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+////                            Manifest.permission.ACCESS_FINE_LOCATION},
+////                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
+//        }
     }
 
     @Override
     public void onConnectionSuspended(int i) {
+        Log.d(TAG, "Connection to Google API is suspended");
 
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
+
+        Log.d(TAG, "An unresolvable error has occurred and a connection to Google APIs could not " +
+                "be established.");
         // An unresolvable error has occurred and a connection to Google APIs
         // could not be established. Display an error message, or handle
         // the failure silently
@@ -398,23 +424,48 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // ...
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d(TAG, "onLocationChanged(): getting current location");
+        mCurrentLocation = location;
+        Log.d(TAG, "onLocationChanged(): getting current time");
+        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        updateUI();
+    }
+
+    private void updateUI() {
+
+        Log.d(TAG, "updateUI(): updating lat long and time");
+        mLatitudeText.setText("Play Services API Lat: " + String.valueOf
+                (mCurrentLocation.getLatitude()));
+        mLongitudeText.setText("Play Services API Long: " + String.valueOf
+                (mCurrentLocation.getLongitude()));
+        mLastUpdateTimeTextView.setText(mLastUpdateTime);
+    }
+
 //
 //    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+// @NonNull int[] grantResults) {
 //        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
 //            configure_button();
 //    }
 
 //    void configure_button() {
 //        // first check for permissions
-////        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+////        if (ActivityCompat.checkSelfPermission(this, Manifest.permission
+// .ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat
+// .checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager
+// .PERMISSION_GRANTED) {
 ////            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-////                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET}
+////                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,
+// Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET}
 ////                        , 10);
 ////            }
 ////            return;
 ////        }
-//        // this code won'latlongTV execute IF permissions are not allowed, because in the line above there is return statement.
+//        // this code won'latlongTV execute IF permissions are not allowed, because in the line
+// above there is return statement.
 //        getLocationBtn.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View view) {
