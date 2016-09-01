@@ -1,45 +1,408 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.safestreet.logger.MainActivity">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:id="@+id/activity_main"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:weightSum="1"
+              tools:context="com.safestreet.logger.MainActivity">
 
-    <Button
-        android:id="@+id/getLocationBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="request location" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/lat_tv"
+        <TextView
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:text="Travel Mode"/>
+
+        <Spinner
+            android:id="@+id/travel_mode_spinner"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="6">
+
+        </Spinner>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Lat: " />
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/long_tv"
+        <TextView
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:layout_weight="6"
+            android:text="Weather Condition"/>
+
+        <EditText
+            android:id="@+id/weather_et"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:hint="Cloudy"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:text="GPS Status"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/gps_status_tv"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:text="No Fix"/>
+    </LinearLayout>
+
+    <!-- "a" prefix is used to denote android api element ids-->
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text=""/>
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="Google API"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="Android API"
+                android:textStyle="bold"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Last Updated time "/>
+
+            <TextView
+                android:id="@+id/last_updated_time_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_last_updated_time_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Latitude "/>
+
+            <TextView
+                android:id="@+id/lat_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_lat_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Longitude "/>
+
+            <TextView
+                android:id="@+id/long_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_long_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Accuracy "/>
+
+            <TextView
+                android:id="@+id/accuracy_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_accuracy_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Provider "/>
+
+            <TextView
+                android:id="@+id/provider_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_provider_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Speed "/>
+
+            <TextView
+                android:id="@+id/speed_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_speed_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Altitude "/>
+
+            <TextView
+                android:id="@+id/altitude_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_altitude_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Bearing "/>
+
+            <TextView
+                android:id="@+id/bearing_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_bearing_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="Satellites                       ( in View/in Use ) "/>
+
+            <TextView
+                android:id="@+id/satellite_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_satellite_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_weight="3"
+                android:text="DOP/HDOP/VDOP"/>
+
+            <TextView
+                android:id="@+id/dop_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+
+            <TextView
+                android:id="@+id/a_dop_tv"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:layout_weight="3"
+                android:text="NaN"/>
+        </TableRow>
+    </TableLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Long: " />
+        android:layout_marginTop="25dp"
+        android:gravity="center"
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/last_updated_time"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Last updated Time: " />
+        <Button
+            android:id="@+id/start_logging_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:text="Start Logging"/>
 
-    <TextView
-        android:id="@+id/anlatTV"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="anLat: " />
+        <Button
+            android:id="@+id/stop_logging_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:text="Stop Logging"/>
+    </LinearLayout>
 
-    <TextView
-        android:id="@+id/anlongTV"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="anLong: " />
 </LinearLayout>
