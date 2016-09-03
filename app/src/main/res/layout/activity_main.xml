@@ -193,7 +193,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="1"
                 android:layout_weight="3"
-                android:text="Accuracy "/>
+                android:text="Accuracy(in meters)"/>
 
             <TextView
                 android:id="@+id/accuracy_tv"
@@ -250,7 +250,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="1"
                 android:layout_weight="3"
-                android:text="Speed "/>
+                android:text="Speed (in m/s)"/>
 
             <TextView
                 android:id="@+id/speed_tv"
@@ -278,7 +278,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="1"
                 android:layout_weight="3"
-                android:text="Altitude "/>
+                android:text="Altitude (in meters)"/>
 
             <TextView
                 android:id="@+id/altitude_tv"
@@ -306,7 +306,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="1"
                 android:layout_weight="3"
-                android:text="Bearing "/>
+                android:text="Bearing (in deg) "/>
 
             <TextView
                 android:id="@+id/bearing_tv"

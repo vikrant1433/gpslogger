@@ -7,11 +7,14 @@ import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.android.gms.appindexing.AppIndex;
@@ -51,21 +54,30 @@ public class MainActivity extends AppCompatActivity implements GpsStatus.NmeaLis
     private TextView mAnLongitudeText;
     private boolean mRequestingLocationUpdates = true;
     private LocationManager mLocationManager = null;
-    private com.google.android.gms.location.LocationListener mLocationListener = null;
     private LocationRequest mLocationRequest = null;
     private Location mCurrentLocation = null;
     private String mLastUpdateTime;
     private TextView mLastUpdateTimeTextView;
+    private TextView mAccuracyTextView;
+    private TextView mBearingTextView;
+    private TextView mAltitudeTextView;
+    private TextView mSpeedTextView;
+    private TextView mProviderTextView;
     private Float mAccuracy = 0.0f;
     private Float mBearing = 0.0f;
     private double mAltitude = 0.0;
     private Float mSpeed = 0.0f;
     private String mProvider = null;
     private Long mTime = 0L;
+
     // create Location request for google play services api
     // 1. Set Up a Location Request
     private int UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     private int FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
+    private TextView mSatelliteTextView;
+    private TextView mDOPTextView;
+    private double mLatitude;
+    private double mLongitude;
 
     @Override
     protected void onStart() {
@@ -189,9 +201,21 @@ public class MainActivity extends AppCompatActivity implements GpsStatus.NmeaLis
     }
 
     private void setupUIReferences() {
+        mLastUpdateTimeTextView = (TextView) findViewById(R.id.last_updated_time_tv);
         mLatitudeText = (TextView) findViewById(R.id.lat_tv);
         mLongitudeText = (TextView) findViewById(R.id.long_tv);
-        mLastUpdateTimeTextView = (TextView) findViewById(R.id.last_updated_time_tv);
+        mAccuracyTextView = (TextView) findViewById(R.id.accuracy_tv);
+        mSpeedTextView = (TextView) findViewById(R.id.speed_tv);
+        mProviderTextView = (TextView) findViewById(R.id.provider_tv);
+        mAltitudeTextView = (TextView) findViewById(R.id.altitude_tv);
+        mBearingTextView = (TextView) findViewById(R.id.bearing_tv);
+        mSatelliteTextView = (TextView) findViewById(R.id.satellite_tv);
+        mDOPTextView = (TextView) findViewById(R.id.dop_tv);
+        Spinner travelModeSpinner = (Spinner) findViewById(R.id.travel_mode_spinner);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array
+                .travel_mode_array, android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        travelModeSpinner.setAdapter(adapter);
     }
 
     @Override
@@ -250,28 +274,45 @@ public class MainActivity extends AppCompatActivity implements GpsStatus.NmeaLis
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged(): getting current location");
+//        Log.d(TAG, "onLocationChanged(): getting current location");
         mCurrentLocation = location;
-        Log.d(TAG, "onLocationChanged(): getting current time");
+//        Log.d(TAG, "onLocationChanged(): getting current time");
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        mLatitude = location.getLatitude();
+        mLongitude = location.getLongitude();
         mAccuracy = location.getAccuracy();
         mSpeed = location.getSpeed();
         mAltitude = location.getAltitude();
         mBearing = location.getBearing();
         mProvider = location.getProvider();
         mTime = location.getTime();
-        updateUI();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                updateUI();
+//            }
+//        });
+        Handler handler = new Handler();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                updateUI();
+            }
+        });
+//        updateUI();
     }
 
     private void updateUI() {
 
-        Log.d(TAG, "updateUI(): updating lat long and time");
-        mLatitudeText.setText("Play Services API Lat: " + String.valueOf
-                (mCurrentLocation.getLatitude()));
-        mLongitudeText.setText("Play Services API Long: " + String.valueOf
-                (mCurrentLocation.getLongitude()));
+//        Log.d(TAG, "updateUI(): updating lat long and time");
+        mLatitudeText.setText(String.valueOf(mLatitude));
+        mLongitudeText.setText(String.valueOf(mLongitude));
+        mAccuracyTextView.setText(String.valueOf(mAccuracy));
+        mAltitudeTextView.setText(String.valueOf(mAltitude));
+        mSpeedTextView.setText(String.valueOf(mSpeed));
+        mBearingTextView.setText(String.valueOf(mBearing));
+        mProviderTextView.setText(String.valueOf(mProvider));
         mLastUpdateTimeTextView.setText(mLastUpdateTime);
-//        (TextView) findViewById(R.id.)
     }
 
     @Override
@@ -282,7 +323,6 @@ public class MainActivity extends AppCompatActivity implements GpsStatus.NmeaLis
 
     @Override
     public void onGpsStatusChanged(int event) {
-        mLocationManager.getGpsStatus(null).getSatellites();
 
     }
 
