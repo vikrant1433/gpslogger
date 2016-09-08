@@ -1,10 +1,34 @@
 <resources>
     <string name="app_name">Logger</string>
+    <string name="none">--</string>
+    <string name="google_api">Google API</string>
+    <string name="android_api">Android API</string>
+    <string name="gps_status">GPS Status</string>
+    <string name="wheather_hint">Cloudy</string>
+    <string name="no_fix">No Fix Available</string>
+    <string name="last_updated_time">Last Updated time</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="accuracy_in_meters">Accuracy(in meters)</string>
+    <string name="provider">Provider</string>
+    <string name="speed_in_kmph">Speed (in Km/hr)</string>
+    <string name="altitude_in_meters">Altitude (in meters)</string>
+    <string name="bearing_in_deg">Bearing (in deg)</string>
+    <string name="satellites_in_view_in_use">Satellites (in Use/in View)</string>
+    <string name="pdop_hdop_vdop">PDOP/HDOP/VDOP</string>
+    <string name="start_logging">Start Logging</string>
+    <string name="stop_logging">Stop Logging</string>
+    <string name="weather_condition">Weather Condition</string>
+    <string name="travel_mode">Travel Mode</string>
+    <string name="remark">Remark</string>
+    <string name="na">N/A</string>
     <string-array name="travel_mode_array">
         <item>None</item>
+        <item>Walking</item>
+        <item>Cycling</item>
         <item>Scooter</item>
+        <item>Auto</item>
         <item>Car</item>
         <item>Bus</item>
-        <item>Walking</item>
     </string-array>
 </resources>

@@ -25,11 +25,17 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.safestreet.logger.MainActivity;
 import com.safestreet.logger.R;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+
+import app.LoggerApplication;
+import io.LogWriter;
+import math.UnitConverter;
+import ui.component.GoogleLocationUI;
 
 /**
  * Created by vikrant on 4/9/16.
@@ -39,7 +45,9 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 10;
     private static final int REQUEST_CHECK_SETTINGS = 11;
     private static final int MIN_DISTANCE = 0;
-    private final String TAG = MainActivity.class.getSimpleName();
+    private final String TAG = GoogleLocationUtil.class.getSimpleName();
+    private final LoggerApplication application;
+    private final GoogleLocationUI googleLocationUI;
     private Location location;
     private int UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     private int FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
@@ -67,11 +75,39 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
     private Float mBearing = 0.0f;
     private Float mSpeed = 0.0f;
     private String mProvider = null;
-    private Long mTime = 0L;
+    private String mTime = "N/A";
     private Activity activity;
+    private LogWriter logWriter;
 
     public GoogleLocationUtil(Activity activity) {
         this.activity = activity;
+        this.googleLocationUI = new GoogleLocationUI(activity, this);
+        application = (LoggerApplication) this.activity.getApplication();
+    }
+
+    public String getLatitude() {
+        //        return String.format("%.") mLatitude;
+        return String.format("%.6f", mLatitude);
+    }
+
+    public String getLongitude() {
+        return String.format("%.6f", mLongitude);
+    }
+
+    public double getmAltitude() {
+        return mAltitude;
+    }
+
+    public Float getmAccuracy() {
+        return mAccuracy;
+    }
+
+    public Float getBearing() {
+        return mBearing;
+    }
+
+    public String getSpeed() {
+        return String.format("%.2f", UnitConverter.fromMpsToKmph(mSpeed));
     }
 
     public void setUpUI() {
@@ -94,11 +130,11 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
             Log.d(TAG, "updateUI: mLogitudeText is null");
             setUpUI();
         }
-        mLongitudeText.setText(String.valueOf(mLongitude));
-        mLatitudeText.setText(String.valueOf(mLatitude));
+        mLongitudeText.setText(getLongitude());
+        mLatitudeText.setText(getLatitude());
         mAccuracyTextView.setText(String.valueOf(mAccuracy));
         mAltitudeTextView.setText(String.valueOf(mAltitude));
-        mSpeedTextView.setText(String.valueOf(mSpeed));
+        mSpeedTextView.setText(getSpeed());
         mBearingTextView.setText(String.valueOf(mBearing));
         mProviderTextView.setText(String.valueOf(mProvider));
         mLastUpdateTimeTextView.setText(mLastUpdateTime);
@@ -183,23 +219,50 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged(): getting current location");
-        this.setLocation(location);
-        Log.d(TAG, "onLocationChanged(): getting current time");
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        //        Log.d(TAG, "onLocationChanged(): getting current location");
+        setLocation(location);
         updateUI();
+
+        //                Log.d(TAG, "onLocationChanged(): getting current time");
+        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        mTime = new SimpleDateFormat(K.TIMESTAMP_FORMAT_STRING).format(Calendar
+                .getInstance().getTime()).toString();
+        if (application.isLogging()) {
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    saveDate();
+                }
+            }).start();
+        }
+    }
+
+    synchronized private void saveDate() {
+
+        logWriter.write(K.FIELD_SEPARATOR +
+                getTime() + K.FIELD_SEPARATOR +
+                mLatitude + K.FIELD_SEPARATOR +
+                mLongitude + K.FIELD_SEPARATOR +
+                mAccuracy + K.FIELD_SEPARATOR +
+                mAltitude + K.FIELD_SEPARATOR +
+                getSpeed() + K.FIELD_SEPARATOR +
+                getBearing() + K.FIELD_SEPARATOR + K.NEWLINE
+        );
+
     }
 
     private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this.activity, Manifest.permission
-                .ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
 
-            Log.d(TAG, "startLocationUpdates(): permission not granted asking for permission");
+        Log.d(TAG, "startLocationUpdates(): requesting location updates");
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission
+                .ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
             ActivityCompat.requestPermissions(
                     this.activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
-            // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -208,7 +271,6 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        Log.d(TAG, "startLocationUpdates(): requesting location updates");
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                 mLocationRequest, this);
     }
@@ -223,7 +285,6 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
         mAltitude = location.getAltitude();
         mBearing = location.getBearing();
         mProvider = location.getProvider();
-        mTime = location.getTime();
     }
 
     @Override
@@ -233,7 +294,6 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
         if (mRequestingLocationUpdates) {
             startLocationUpdates();
         }
-
     }
 
     @Override
@@ -280,4 +340,21 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
         mGoogleApiClient.disconnect();
     }
 
+    public void stopLogging() {
+        logWriter.writeLogTemplate();
+        logWriter.close();
+    }
+
+    public void startLogging() {
+        // checking for storage permission
+        logWriter = new LogWriter(activity, googleLocationUI, "play-store-api-gpslog");
+        logWriter.write(K.GOOGLE_API_HEADER);
+        // it is important to give a different prefix name to log file else it will over
+        // write the  any existing file with same prefix + timestamp
+        // log file name gpslog-current-date-time.txt
+    }
+
+    public String getTime() {
+        return mTime;
+    }
 }
