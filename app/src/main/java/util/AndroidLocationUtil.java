@@ -287,7 +287,7 @@ public class AndroidLocationUtil {
         Log.d(TAG, "Logging started");
         // checking for storage permission
         logWriter = new LogWriter(activity, androidLocationUI, K.LOG_FILE_NAME_PREFIX);
-        logWriter.write(K.GOOGLE_API_HEADER);
+        logWriter.write(K.ANDROID_LOCATION_HEADER_STRING);
         // log file name gpslog-current-date-time.txt
     }
 
