@@ -38,9 +38,9 @@ public class K {
             .addHeader("timestamp")
             .addHeader("lat")
             .addHeader("long")
-            .addHeader("accuracy (in meters)")
-            .addHeader("speed in kmph")
-            .addHeader("brearing (in deg)")
+            .addHeader("accuracy")
+            .addHeader("speed")
+            .addHeader("brearing")
             .getHeader();
     public static final String FILE_NAME_SEPARATOR = "#";
     public static final long MIN_LOCATION_UPADATE_INTERVAL_IN_MILLISECONDS = 20;

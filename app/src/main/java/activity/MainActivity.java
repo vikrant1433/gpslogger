@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // change speed to kmph
             newLocation.setSpeed(location.getSpeed() * 3.6f);
 
-            Log.d(TAG, "inside onlocation changed " + newLocation.toString());
+//            Log.d(TAG, "inside onlocation changed " + newLocation.toString());
             if (application.isLogging()) {
                 Log.d(TAG, "application.isLogging is true");
                 locationLogger.writeLocation(newLocation);
@@ -329,14 +329,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER || event.sensor.getType() != Sensor.TYPE_LINEAR_ACCELERATION)
+        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
             return;
 
         if (((AppState) this.getApplication()).isLogging()) {
-//            accelerometerLogger.writeAcceleration(
-//                    new Acceleration(event.values[0], event.values[1], event.values[2])
-//            );
-            accelerometerLogger.write(new Acceleration(event.values[0], event.values[1], event.values[2]).toString());
+//            Log.d(TAG, event.values[0] + "");
+            accelerometerLogger.writeAcceleration(
+                    new Acceleration(event.values[0], event.values[1], event.values[2])
+            );
+            //            accelerometerLogger.write(new Acceleration(event.values[0], event
+            // .values[1], event.values[2]).toString());
         }
     }
 

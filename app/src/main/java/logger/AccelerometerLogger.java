@@ -15,6 +15,6 @@ public class AccelerometerLogger extends LogWriter {
     }
 
     public void writeAcceleration(Acceleration acceleration) {
-        write(System.currentTimeMillis() + K.FIELD_SEPARATOR + acceleration.toString());
+        write(System.currentTimeMillis() + K.FIELD_SEPARATOR + acceleration.toString() + K.NEWLINE);
     }
 }
