@@ -28,12 +28,10 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.safestreet.logger.R;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 
-import app.LoggerApplication;
-import io.LogWriter;
+import app.AppState;
+import logger.LogWriter;
 import math.UnitConverter;
 import ui.component.GoogleLocationUI;
 
@@ -46,7 +44,7 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
     private static final int REQUEST_CHECK_SETTINGS = 11;
     private static final int MIN_DISTANCE = 0;
     private final String TAG = GoogleLocationUtil.class.getSimpleName();
-    private final LoggerApplication application;
+    private final app.AppState application;
     private final GoogleLocationUI googleLocationUI;
     private Location location;
     private int UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
@@ -82,7 +80,7 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
     public GoogleLocationUtil(Activity activity) {
         this.activity = activity;
         this.googleLocationUI = new GoogleLocationUI(activity, this);
-        application = (LoggerApplication) this.activity.getApplication();
+        application = (AppState) this.activity.getApplication();
     }
 
     public String getLatitude() {
@@ -179,6 +177,7 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
                         .getLocationSettingsStates();
                 switch (status.getStatusCode()) {
                     case LocationSettingsStatusCodes.SUCCESS:
+
                         // All location settings are satisfied. The client can
                         // initialize location requests here.
                         //                 ...
@@ -219,26 +218,27 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
 
     @Override
     public void onLocationChanged(Location location) {
-        //        Log.d(TAG, "onLocationChanged(): getting current location");
-        setLocation(location);
-        updateUI();
+        Log.d(TAG, "onLocationChanged(): getting current location");
+        Log.d(TAG, location.toString());
+        //        setLocation(location);
+        //        updateUI();
 
         //                Log.d(TAG, "onLocationChanged(): getting current time");
-        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-        mTime = new SimpleDateFormat(K.TIMESTAMP_FORMAT_STRING).format(Calendar
-                .getInstance().getTime()).toString();
-        if (application.isLogging()) {
-
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    saveDate();
-                }
-            }).start();
-        }
+        //        mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+        //        mTime = new SimpleDateFormat(K.TIMESTAMP_FORMAT_STRING).format(Calendar
+        //                .getInstance().getTime()).toString();
+        //        if (application.isLogging()) {
+        //
+        //            new Thread(new Runnable() {
+        //                @Override
+        //                public void run() {
+        //                    saveDate();
+        //                }
+        //            }).start();
+        //        }
     }
 
-    synchronized private void saveDate() {
+    private void saveDate() {
 
         logWriter.write(K.FIELD_SEPARATOR +
                 getTime() + K.FIELD_SEPARATOR +
@@ -341,13 +341,13 @@ public class GoogleLocationUtil implements GoogleApiClient.ConnectionCallbacks, 
     }
 
     public void stopLogging() {
-        logWriter.writeLogTemplate();
+        //        logWriter.writeLogTemplate();
         logWriter.close();
     }
 
     public void startLogging() {
         // checking for storage permission
-        logWriter = new LogWriter(activity, googleLocationUI, "play-store-api-gpslog");
+        logWriter = new LogWriter("play-store-api-gpslog");
         logWriter.write(K.GOOGLE_API_HEADER);
         // it is important to give a different prefix name to log file else it will over
         // write the  any existing file with same prefix + timestamp

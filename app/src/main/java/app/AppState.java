@@ -5,7 +5,7 @@ import android.app.Application;
 /**
  * Created by vikrant on 7/9/16.
  */
-public class LoggerApplication extends Application{
+public class AppState extends Application{
     private boolean isLogging = false;
     protected String startLogTime;
 

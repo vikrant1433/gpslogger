@@ -5,27 +5,25 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.GpsSatellite;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Iterator;
 
-import app.LoggerApplication;
-import io.LogWriter;
+import app.AppState;
+import logger.LocationLogger;
 import logger.nmea.NmeaSentence;
 import math.UnitConverter;
+import sensor.GPSLocation;
 import ui.component.AndroidLocationUI;
+
+import static android.support.v4.app.ActivityCompat.checkSelfPermission;
+import static android.support.v4.app.ActivityCompat.requestPermissions;
 
 /**
  * Created by vikrant on 4/9/16.
@@ -33,7 +31,7 @@ import ui.component.AndroidLocationUI;
 public class AndroidLocationUtil {
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_LOCATION = 10;
     // update interval of location is set to 1 second
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 20;
     private static final float MIN_DISTANCE = 0;
     private static final String TAG = AndroidLocationUtil.class.getSimpleName();
     // location fields
@@ -52,9 +50,9 @@ public class AndroidLocationUtil {
      * VDOP – vertical dilution of precision
      * PDOP – position (3D) dilution of precision
      */
-    protected String mPDOP;
-    protected String mHDOP;
-    protected String mVDOP;
+    protected String mPDOP = "";
+    protected String mHDOP = "";
+    protected String mVDOP = "";
     protected String mProvider = K.NONE;
 
     private Activity activity;
@@ -62,94 +60,117 @@ public class AndroidLocationUtil {
     private AndroidLocationUI androidLocationUI;
     private NmeaSentence nmea = new NmeaSentence("");
     private String mGpsMode = K.NO_FIX;
-    private GpsStatus.Listener gpsStatusListener = new GpsStatus.Listener() {
-        @Override
-        public void onGpsStatusChanged(int event) {
-            //                        Log.d(TAG, "onGpsStatusChanged: event " + event);
-            GpsStatus gpsStatus = mLocationManager.getGpsStatus(null);
-            if (gpsStatus != null) {
-                mSatelliteInUse = 0;
-                mSatelliteInView = 0;
-                Iterable<GpsSatellite> satellites = gpsStatus.getSatellites();
-                Iterator<GpsSatellite> sat = satellites.iterator();
-                while (sat.hasNext()) {
-                    GpsSatellite satellite = sat.next();
-                    if (satellite.usedInFix())
-                        mSatelliteInUse++;
-                    mSatelliteInView++;
-                }
-            }
-            switch (event) {
-                case GpsStatus.GPS_EVENT_STARTED:
-                    mGpsMode = "Searching";
-                    //                    Toast.makeText(activity, "GPS_SEARCHING", Toast
-                    // .LENGTH_SHORT).show(); System.out.println("TAG - GPS searching: ");
-                    break;
-                case GpsStatus.GPS_EVENT_STOPPED:
-                    //                    System.out.println("TAG - GPS Stopped");
-                    mGpsMode = "Stopped";
-                    break;
-                case GpsStatus.GPS_EVENT_FIRST_FIX:
-                /*
-                 * GPS_EVENT_FIRST_FIX Event is called when GPS is locked
-                 */
-                    //                    Toast.makeText(activity, "GPS_LOCKED", Toast
-                    // .LENGTH_SHORT).show();
-                    /*
-                     * Removing the GPS status listener once GPS is locked
-                     */
-                    //                    mLocationManager.removeGpsStatusListener
-                    // (gpsStatusListener);
-                    mGpsMode = "Fixed";
-
-                    break;
-                //                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
-                //                    mGpsMode = K.NO_FIX;
-                //                    //                    System.out.println("TAG -
-                // GPS_EVENT_SATELLITE_STATUS");
-                //                    break;
-            }
-            if (gpsStatus != null) {
-                androidLocationUI.updateGpsStatusUI();
-                androidLocationUI.updateSatelliteUI();
-            }
-
-        }
-    };
-    private GpsStatus.NmeaListener nmeaListener = new GpsStatus.NmeaListener() {
-        @Override
-        public void onNmeaReceived(long timestamp, String nmeaSentence) {
-
-            if (Strings.isNullOrEmpty(nmeaSentence)) {
-                return;
-            }
-            nmea.setNmeaSentence(nmeaSentence);
-            if (nmea.isLocationSentence()) {
-                mPDOP = nmea.getLatestPdop();
-                mHDOP = nmea.getLatestHdop();
-                mVDOP = nmea.getLatestVdop();
-                androidLocationUI.updateNemaUI();
-            }
-
-        }
-    };
-    private LogWriter logWriter;
-    private LoggerApplication application;
+    //    private GpsStatus.Listener gpsStatusListener = new GpsStatus.Listener() {
+    //        @Override
+    //        public void onGpsStatusChanged(int event) {
+    //            //                        Log.d(TAG, "onGpsStatusChanged: event " + event);
+    //            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission
+    //                    .ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    //                // TODO: Consider calling
+    //                //    ActivityCompat#requestPermissions
+    //                // here to request the missing permissions, and then overriding
+    //                //   public void onRequestPermissionsResult(int requestCode, String[]
+    // permissions,
+    //                //                                          int[] grantResults)
+    //                // to handle the case where the user grants the permission. See the
+    // documentation
+    //                // for ActivityCompat#requestPermissions for more details.
+    //                return;
+    //            }
+    //            GpsStatus gpsStatus = mLocationManager.getGpsStatus(null);
+    //            if (gpsStatus != null) {
+    //                mSatelliteInUse = 0;
+    //                mSatelliteInView = 0;
+    //                Iterable<GpsSatellite> satellites = gpsStatus.getSatellites();
+    //                Iterator<GpsSatellite> sat = satellites.iterator();
+    //                while (sat.hasNext()) {
+    //                    GpsSatellite satellite = sat.next();
+    //                    if (satellite.usedInFix())
+    //                        mSatelliteInUse++;
+    //                    mSatelliteInView++;
+    //                }
+    //            }
+    //            switch (event) {
+    //                case GpsStatus.GPS_EVENT_STARTED:
+    //                    mGpsMode = "Searching";
+    //                    //                    Toast.makeText(activity, "GPS_SEARCHING", Toast
+    //                    // .LENGTH_SHORT).show(); System.out.println("TAG - GPS searching: ");
+    //                    break;
+    //                case GpsStatus.GPS_EVENT_STOPPED:
+    //                    //                    System.out.println("TAG - GPS Stopped");
+    //                    mGpsMode = "Stopped";
+    //                    break;
+    //                case GpsStatus.GPS_EVENT_FIRST_FIX:
+    //                /*
+    //                 * GPS_EVENT_FIRST_FIX Event is called when GPS is locked
+    //                 */
+    //                    //                    Toast.makeText(activity, "GPS_LOCKED", Toast
+    //                    // .LENGTH_SHORT).show();
+    //                    /*
+    //                     * Removing the GPS status listener once GPS is locked
+    //                     */
+    //                    //                    mLocationManager.removeGpsStatusListener
+    //                    // (gpsStatusListener);
+    //                    mGpsMode = "Fixed";
+    //
+    //                    break;
+    //                //                case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+    //                //                    mGpsMode = K.NO_FIX;
+    //                //                    //                    System.out.println("TAG -
+    //                // GPS_EVENT_SATELLITE_STATUS");
+    //                //                    break;
+    //            }
+    //            if (gpsStatus != null) {
+    //                androidLocationUI.updateGpsStatusUI();
+    //                androidLocationUI.updateSatelliteUI();
+    //            }
+    //
+    //        }
+    //    };
+    //    private GpsStatus.NmeaListener nmeaListener = new GpsStatus.NmeaListener() {
+    //        @Override
+    //        public void onNmeaReceived(long timestamp, String nmeaSentence) {
+    //
+    //            if (Strings.isNullOrEmpty(nmeaSentence)) {
+    //                return;
+    //            }
+    //            nmea.setNmeaSentence(nmeaSentence);
+    //            if (nmea.isLocationSentence()) {
+    //                mPDOP = nmea.getLatestPdop().isEmpty() ? mPDOP : nmea.getLatestPdop();
+    //                mHDOP = nmea.getLatestHdop().isEmpty() ? mHDOP : nmea.getLatestHdop();
+    //                ;
+    //                mVDOP = nmea.getLatestVdop().isEmpty() ? mVDOP : nmea.getLatestVdop();
+    //                ;
+    //                androidLocationUI.updateNemaUI();
+    //            }
+    //
+    //        }
+    //    };
+    private LocationLogger locationLogger;
+    private app.AppState application;
     private LocationListener locationListener = new LocationListener() {
         @Override
-        public void onLocationChanged(Location location) {
+        public void onLocationChanged(final Location location) {
 
             // Log.d(TAG, "onLocationChanged(): getting current time");
-            setLocation(location);
-            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-            mTime = new SimpleDateFormat(K.TIMESTAMP_FORMAT_STRING).format(Calendar
-                    .getInstance().getTime()).toString();
-            androidLocationUI.updateUI();
+            //            setLocation(location);
+            //            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+            //            mTime = new SimpleDateFormat(K.TIMESTAMP_FORMAT_STRING).format(Calendar
+            //                    .getInstance().getTime()).toString();
+            final Location newLocation = location;
+            // change speed to kmph
+            newLocation.setSpeed(location.getSpeed() * 3.6f);
+            mTime = "" + System.currentTimeMillis();
+            setLocation(newLocation);
+
+            //            androidLocationUI.updateUI();
+            Log.d(TAG, newLocation.toString());
+
             if (application.isLogging()) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        saveData();
+                        locationLogger.writeLocation((GPSLocation) location);
                     }
                 }).start();
             }
@@ -177,9 +198,8 @@ public class AndroidLocationUtil {
 
     public AndroidLocationUtil(Activity activity) {
         this.activity = activity;
-        this.androidLocationUI = new AndroidLocationUI(activity, this);
-        application = (LoggerApplication) this.activity.getApplication();
-
+        //        this.androidLocationUI = new AndroidLocationUI(activity, this);
+        application = (AppState) this.activity.getApplication();
     }
 
     public String getVDOP() {
@@ -238,20 +258,21 @@ public class AndroidLocationUtil {
         return mAccuracy;
     }
 
-    synchronized private void saveData() {
-        logWriter.write(K.FIELD_SEPARATOR +
+    private void saveData() {
+        //        locationLogger.writeLocation();
+        locationLogger.write(
                 getTime() + K.FIELD_SEPARATOR +
-                getLatitude() + K.FIELD_SEPARATOR +
-                getLongitude() + K.FIELD_SEPARATOR +
-                getAccuracy() + K.FIELD_SEPARATOR +
-                getAltitude() + K.FIELD_SEPARATOR +
-                getSpeed() + K.FIELD_SEPARATOR +
-                getBearing() + K.FIELD_SEPARATOR +
-                getSatelliteInUse() + K.FIELD_SEPARATOR +
-                getSatelliteInView() + K.FIELD_SEPARATOR +
-                getPDOP() + K.FIELD_SEPARATOR +
-                getHDOP() + K.FIELD_SEPARATOR +
-                getVDOP() + K.FIELD_SEPARATOR + K.NEWLINE
+                        getLatitude() + K.FIELD_SEPARATOR +
+                        getLongitude() + K.FIELD_SEPARATOR +
+                        getAccuracy() + K.FIELD_SEPARATOR +
+                        //                getAltitude() + K.FIELD_SEPARATOR +
+                        getSpeed() + K.FIELD_SEPARATOR +
+                        getBearing() + K.FIELD_SEPARATOR  //+
+                //                getSatelliteInUse() + K.FIELD_SEPARATOR +
+                //                getSatelliteInView() + K.FIELD_SEPARATOR +
+                //                getPDOP() + K.FIELD_SEPARATOR +
+                //                getHDOP() + K.FIELD_SEPARATOR +
+                //                getVDOP() + K.FIELD_SEPARATOR + K.NEWLINE
         );
     }
 
@@ -261,15 +282,14 @@ public class AndroidLocationUtil {
         mLocationManager = (LocationManager) this.activity.getSystemService(Context
                 .LOCATION_SERVICE);
         // checking run time location access permissions only for API version >= 23 (Marshmallow)
-        if (ActivityCompat.checkSelfPermission(this.activity, Manifest.permission
+        if (checkSelfPermission(this.activity, Manifest.permission
                 .ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
-            // if permission is already granted request for permissions
-            //            ActivityCompat.requestPermissions(
-            //                    this.activity, new String[]{Manifest.permission
-            // .ACCESS_FINE_LOCATION},
-            //                    MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
-            //    ActivityCompat#requestPermissions
+            // if permission is not already granted request for permissions
+            requestPermissions(this.activity, new String[]{Manifest.permission
+                    .ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_LOCATION);
+
+            // ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
             //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
             //                                          int[] grantResults)
@@ -279,22 +299,18 @@ public class AndroidLocationUtil {
         }
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                 UPDATE_INTERVAL_IN_MILLISECONDS, MIN_DISTANCE, locationListener);
-        mLocationManager.addGpsStatusListener(gpsStatusListener);
-        mLocationManager.addNmeaListener(nmeaListener);
+        //        mLocationManager.addGpsStatusListener(gpsStatusListener);
+        //        mLocationManager.addNmeaListener(nmeaListener);
     }
+
 
     public void startLogging() {
         Log.d(TAG, "Logging started");
-        // checking for storage permission
-        logWriter = new LogWriter(activity, androidLocationUI, K.LOG_FILE_NAME_PREFIX);
-        logWriter.write(K.ANDROID_LOCATION_HEADER_STRING);
-        // log file name gpslog-current-date-time.txt
+        locationLogger.startLogging();
     }
 
-
     public void stopLogging() {
-        logWriter.writeLogTemplate();
-        logWriter.close();
+        locationLogger.stopLogging();
     }
 
     private void setLocation(Location location) {
@@ -310,5 +326,9 @@ public class AndroidLocationUtil {
 
     public String getGpsMode() {
         return mGpsMode;
+    }
+
+    public void setLocationLogger(LocationLogger locationLogger) {
+        this.locationLogger = locationLogger;
     }
 }
